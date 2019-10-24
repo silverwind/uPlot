@@ -437,6 +437,7 @@ var uPlot = (function () {
 	//	type: "n",
 		scale: "y",
 		show: true,
+		alpha: 1,
 	//	label: "Value",
 	//	value: v => v,
 	};
@@ -856,14 +857,17 @@ var uPlot = (function () {
 						s.color,
 						s[WIDTH],
 						s.dash,
-						s.fill
+						s.fill,
+						s.alpha
 					);
 				}
 			});
 		}
 
-		function drawLine(xdata, ydata, scaleX, scaleY, color, width, dash, fill) {
+		function drawLine(xdata, ydata, scaleX, scaleY, color, width, dash, fill, alpha) {
 			setCtxStyle(color, width, dash, fill);
+
+			ctx.globalAlpha = alpha;
 
 			var gap = false;
 
@@ -911,6 +915,8 @@ var uPlot = (function () {
 			}
 
 			ctx.stroke();
+
+			ctx.globalAlpha = 1;
 		}
 
 		// dim is logical (getClientBoundingRect) pixels, not canvas pixels

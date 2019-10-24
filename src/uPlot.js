@@ -472,13 +472,16 @@ export default function uPlot(opts, data) {
 					s[WIDTH],
 					s.dash,
 					s.fill,
+					s.alpha,
 				);
 			}
 		});
 	}
 
-	function drawLine(xdata, ydata, scaleX, scaleY, color, width, dash, fill) {
+	function drawLine(xdata, ydata, scaleX, scaleY, color, width, dash, fill, alpha) {
 		setCtxStyle(color, width, dash, fill);
+
+		ctx.globalAlpha = alpha;
 
 		let gap = false;
 
@@ -526,6 +529,8 @@ export default function uPlot(opts, data) {
 		}
 
 		ctx.stroke();
+
+		ctx.globalAlpha = 1;
 	}
 
 	// dim is logical (getClientBoundingRect) pixels, not canvas pixels
