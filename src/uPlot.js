@@ -130,7 +130,7 @@ export default function uPlot(opts, data) {
 		s.width = s.width || 1;
 	});
 
-	const cursor = assign({}, {show: true}, opts.cursor);
+	const cursor = assign({}, {show: true, focus: false}, opts.cursor);
 
 	let dataLen;
 
@@ -640,10 +640,10 @@ export default function uPlot(opts, data) {
 		i1 = _i1;
 
 		setScales();
+		updatePointer();
 		ctx.clearRect(0, 0, can[WIDTH], can[HEIGHT]);
 		drawAxesGrid();
 		drawSeries();
-		updatePointer();
 	}
 
 	this.setView = setView;
@@ -720,6 +720,11 @@ export default function uPlot(opts, data) {
 
 	let self = this;
 
+	// y-distance
+	let distsToCursor = Array(series.length);
+
+	let focused = null;
+
 	function updatePointer(pub) {
 		rafPending = false;
 
@@ -740,14 +745,47 @@ export default function uPlot(opts, data) {
 			if (i > 0 && s.show) {
 				let yPos = getYPos(data[i][idx], scales[s.scale], canCssHeight);
 
+			//	if (cursor.focus)
+					distsToCursor[i] = abs(yPos - y);
+
 				if (yPos == null)
 					yPos = -10;
 
 				trans(pts[i], xPos, yPos);
 			}
+			else
+				distsToCursor[i] = inf;
 
 			if (legend.show)
 				legendLabels[i][firstChild].nodeValue = s.label + ': ' + s.value(data[i][idx]);
+		}
+
+		if (cursor.focus) {
+			let minDist = min.apply(null, distsToCursor);
+
+			let fi = null;
+
+			for (let i = 0; i < series.length; i++) {
+				series[i].alpha = 1;
+
+				// has to be at least 5 pixels away
+			//	if (minDist <= 10) {
+					if (distsToCursor[i] > minDist)
+						series[i].alpha = 0.2;
+					else
+						fi = i;
+			//	}
+			}
+
+			// FIXME: this could end up in double redraw since setView() calls updatePointer followed by the same thing that's below
+			if (fi != focused) {
+			//	console.log("focus " + fi);
+				ctx.clearRect(0, 0, can[WIDTH], can[HEIGHT]);
+				drawAxesGrid();
+				drawSeries();
+			}
+
+			focused = fi;
 		}
 
 		if (dragging) {
