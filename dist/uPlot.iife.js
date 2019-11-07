@@ -760,16 +760,16 @@ var uPlot = (function (exports) {
 			return div;
 		}
 
-		function getYPos(val, scale, hgt) {
+		function getYPos(val, min, max, hgt) {
 			if (val == null)
 				{ return val; }
 
-			var pctY = (val - scale.min) / (scale.max - scale.min);
+			var pctY = (val - min) / (max - min);
 			return round((1 - pctY) * hgt);
 		}
 
-		function getXPos(val, scale, wid) {
-			var pctX = (val - scale.min) / (scale.max - scale.min);
+		function getXPos(val, min, max, wid) {
+			var pctX = (val - min) / (max - min);
 			return round(pctX * wid);
 		}
 
@@ -964,8 +964,8 @@ var uPlot = (function (exports) {
 				prevY, x, y;
 
 			for (var i = dir == 1 ? self.i0 : self.i1; dir == 1 ? i <= self.i1 : i >= self.i0; i += dir) {
-				x = getXPos(xdata[i], scaleX, can[WIDTH]);
-				y = getYPos(ydata[i], scaleY, can[HEIGHT]);
+				x = getXPos(xdata[i], scaleX.min, scaleX.max, can[WIDTH]);
+				y = getYPos(ydata[i], scaleY.min, scaleY.max, can[HEIGHT]);
 
 				if (dir == -1 && i == self.i1)
 					{ path.lineTo(x, y); }
@@ -1073,7 +1073,7 @@ var uPlot = (function (exports) {
 				var cssProp = ori == 0 ? LEFT : TOP;
 
 				// TODO: filter ticks & offsets that will end up off-canvas
-				var canOffs = ticks.map(function (val) { return getPos(val, scale, can[dim]); });		// bit of waste if we're not drawing a grid
+				var canOffs = ticks.map(function (val) { return getPos(val, scale.min, scale.max, can[dim]); });		// bit of waste if we're not drawing a grid
 
 				var labels = axis.values.call(self, ticks, space);
 
@@ -1247,13 +1247,17 @@ var uPlot = (function (exports) {
 
 			var idx = closestIdxFromXpos(x);
 
-			var xPos = getXPos(data[0][idx], scales[series[0].scale], canCssWidth);
+			var scX = scales[series[0].scale];
+
+			var xPos = getXPos(data[0][idx], scX.min, scX.max, canCssWidth);
 
 			for (var i = 0; i < series.length; i++) {
 				var s = series[i];
 
 				if (i > 0 && s.show) {
-					var yPos = getYPos(data[i][idx], scales[s.scale], canCssHeight);
+					var scY = scales[s.scale];
+
+					var yPos = getYPos(data[i][idx], scY.min, scY.max, canCssHeight);
 
 					if (yPos == null)
 						{ yPos = -10; }

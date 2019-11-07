@@ -339,16 +339,16 @@ export function Line(opts, data) {
 		return div;
 	}
 
-	function getYPos(val, scale, hgt) {
+	function getYPos(val, min, max, hgt) {
 		if (val == null)
 			return val;
 
-		let pctY = (val - scale.min) / (scale.max - scale.min);
+		let pctY = (val - min) / (max - min);
 		return round((1 - pctY) * hgt);
 	}
 
-	function getXPos(val, scale, wid) {
-		let pctX = (val - scale.min) / (scale.max - scale.min);
+	function getXPos(val, min, max, wid) {
+		let pctX = (val - min) / (max - min);
 		return round(pctX * wid);
 	}
 
@@ -543,8 +543,8 @@ export function Line(opts, data) {
 			prevY, x, y;
 
 		for (let i = dir == 1 ? self.i0 : self.i1; dir == 1 ? i <= self.i1 : i >= self.i0; i += dir) {
-			x = getXPos(xdata[i], scaleX, can[WIDTH]);
-			y = getYPos(ydata[i], scaleY, can[HEIGHT]);
+			x = getXPos(xdata[i], scaleX.min, scaleX.max, can[WIDTH]);
+			y = getYPos(ydata[i], scaleY.min, scaleY.max, can[HEIGHT]);
 
 			if (dir == -1 && i == self.i1)
 				path.lineTo(x, y);
@@ -647,7 +647,7 @@ export function Line(opts, data) {
 			let cssProp = ori == 0 ? LEFT : TOP;
 
 			// TODO: filter ticks & offsets that will end up off-canvas
-			let canOffs = ticks.map(val => getPos(val, scale, can[dim]));		// bit of waste if we're not drawing a grid
+			let canOffs = ticks.map(val => getPos(val, scale.min, scale.max, can[dim]));		// bit of waste if we're not drawing a grid
 
 			let labels = axis.values.call(self, ticks, space);
 
@@ -821,13 +821,17 @@ export function Line(opts, data) {
 
 		let idx = closestIdxFromXpos(x);
 
-		let xPos = getXPos(data[0][idx], scales[series[0].scale], canCssWidth);
+		let scX = scales[series[0].scale];
+
+		let xPos = getXPos(data[0][idx], scX.min, scX.max, canCssWidth);
 
 		for (let i = 0; i < series.length; i++) {
 			let s = series[i];
 
 			if (i > 0 && s.show) {
-				let yPos = getYPos(data[i][idx], scales[s.scale], canCssHeight);
+				let scY = scales[s.scale];
+
+				let yPos = getYPos(data[i][idx], scY.min, scY.max, canCssHeight);
 
 				if (yPos == null)
 					yPos = -10;
