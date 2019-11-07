@@ -532,6 +532,7 @@ var uPlot = (function (exports) {
 			var sc = scales[key] = assign({
 				time: i == 0,
 				auto: true,
+				skip: false,
 				min:  inf,
 				max: -inf,
 			}, scales[key]);
@@ -848,7 +849,10 @@ var uPlot = (function (exports) {
 
 				// fast-path for x axis, which is assumed ordered ASC and will not get padded
 				if (i == 0) {
-					var minMax = sc.range(data[0][self.i0], data[0][self.i1]);
+					var minMax = sc.range(
+						sc.skip ? self.i0 : data[0][self.i0],
+						sc.skip ? self.i1 : data[0][self.i1]
+					);
 					sc.min = s.min = minMax[0];
 					sc.max = s.max = minMax[1];
 				}
@@ -964,7 +968,7 @@ var uPlot = (function (exports) {
 				prevY, x, y;
 
 			for (var i = dir == 1 ? self.i0 : self.i1; dir == 1 ? i <= self.i1 : i >= self.i0; i += dir) {
-				x = getXPos(xdata[i], scaleX.min, scaleX.max, can[WIDTH]);
+				x = getXPos(scaleX.skip ? i : xdata[i], scaleX.min, scaleX.max, can[WIDTH]);
 				y = getYPos(ydata[i], scaleY.min, scaleY.max, can[HEIGHT]);
 
 				if (dir == -1 && i == self.i1)
@@ -1075,7 +1079,7 @@ var uPlot = (function (exports) {
 				// TODO: filter ticks & offsets that will end up off-canvas
 				var canOffs = ticks.map(function (val) { return getPos(val, scale.min, scale.max, can[dim]); });		// bit of waste if we're not drawing a grid
 
-				var labels = axis.values.call(self, ticks, space);
+				var labels = axis.values.call(self, scale.skip ? ticks.map(function (i) { return data[0][i]; }) : ticks, space);		// BOO this assumes a specific data/series
 
 				canOffs.forEach(function (off, i) {
 					ch = gridLabel(ch, axis.vals, labels[i], cssProp, round(off/pxRatio))[nextSibling];
@@ -1227,7 +1231,7 @@ var uPlot = (function (exports) {
 			var xsc = scales[series[0].scale];
 			var d = xsc.max - xsc.min;
 			var t = xsc.min + pctX * d;
-			var idx = closestIdx(t, data[0], self.i0, self.i1);
+			var idx = xsc.skip ? round(t) : closestIdx(t, data[0], self.i0, self.i1);
 			return idx;
 		}
 
@@ -1249,7 +1253,7 @@ var uPlot = (function (exports) {
 
 			var scX = scales[series[0].scale];
 
-			var xPos = getXPos(data[0][idx], scX.min, scX.max, canCssWidth);
+			var xPos = getXPos(scX.skip ? idx : data[0][idx], scX.min, scX.max, canCssWidth);
 
 			for (var i = 0; i < series.length; i++) {
 				var s = series[i];

@@ -113,6 +113,7 @@ export function Line(opts, data) {
 		const sc = scales[key] = assign({
 			time: i == 0,
 			auto: true,
+			skip: false,
 			min:  inf,
 			max: -inf,
 		}, scales[key]);
@@ -427,7 +428,10 @@ export function Line(opts, data) {
 
 			// fast-path for x axis, which is assumed ordered ASC and will not get padded
 			if (i == 0) {
-				let minMax = sc.range(data[0][self.i0], data[0][self.i1]);
+				let minMax = sc.range(
+					sc.skip ? self.i0 : data[0][self.i0],
+					sc.skip ? self.i1 : data[0][self.i1]
+				);
 				sc.min = s.min = minMax[0];
 				sc.max = s.max = minMax[1];
 			}
@@ -543,7 +547,7 @@ export function Line(opts, data) {
 			prevY, x, y;
 
 		for (let i = dir == 1 ? self.i0 : self.i1; dir == 1 ? i <= self.i1 : i >= self.i0; i += dir) {
-			x = getXPos(xdata[i], scaleX.min, scaleX.max, can[WIDTH]);
+			x = getXPos(scaleX.skip ? i : xdata[i], scaleX.min, scaleX.max, can[WIDTH]);
 			y = getYPos(ydata[i], scaleY.min, scaleY.max, can[HEIGHT]);
 
 			if (dir == -1 && i == self.i1)
@@ -649,7 +653,7 @@ export function Line(opts, data) {
 			// TODO: filter ticks & offsets that will end up off-canvas
 			let canOffs = ticks.map(val => getPos(val, scale.min, scale.max, can[dim]));		// bit of waste if we're not drawing a grid
 
-			let labels = axis.values.call(self, ticks, space);
+			let labels = axis.values.call(self, scale.skip ? ticks.map(i => data[0][i]) : ticks, space);		// BOO this assumes a specific data/series
 
 			canOffs.forEach((off, i) => {
 				ch = gridLabel(ch, axis.vals, labels[i], cssProp, round(off/pxRatio))[nextSibling];
@@ -801,7 +805,7 @@ export function Line(opts, data) {
 		let xsc = scales[series[0].scale];
 		let d = xsc.max - xsc.min;
 		let t = xsc.min + pctX * d;
-		let idx = closestIdx(t, data[0], self.i0, self.i1);
+		let idx = xsc.skip ? round(t) : closestIdx(t, data[0], self.i0, self.i1);
 		return idx;
 	}
 
@@ -823,7 +827,7 @@ export function Line(opts, data) {
 
 		let scX = scales[series[0].scale];
 
-		let xPos = getXPos(data[0][idx], scX.min, scX.max, canCssWidth);
+		let xPos = getXPos(scX.skip ? idx : data[0][idx], scX.min, scX.max, canCssWidth);
 
 		for (let i = 0; i < series.length; i++) {
 			let s = series[i];
