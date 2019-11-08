@@ -213,12 +213,14 @@ export function Line(opts, data) {
 		if (axis.time == null)
 			axis.time = scales[axis.scale].time;
 
+		let sc = scales[axis.scale];
+
 		// also set defaults for incrs & values based on axis type
 		let isTime = axis.time;
 
-		axis.incrs = axis.incrs || (isTime ? timeIncrs : numIncrs);
+		axis.incrs = axis.incrs || (isTime && !sc.skip ? timeIncrs : numIncrs);
 		axis.values = axis.values || (isTime ? timeAxisVals : numAxisVals);
-		axis.range = fnOrSelf(axis.range || (isTime ? snapMinDate : snapMinNum));
+		axis.range = fnOrSelf(axis.range || (isTime && !sc.skip ? snapMinDate : snapMinNum));
 		axis.space = fnOrSelf(axis.space);
 	});
 
